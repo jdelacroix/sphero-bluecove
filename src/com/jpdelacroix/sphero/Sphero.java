@@ -1,5 +1,8 @@
 package com.jpdelacroix.sphero;
 
+// Copyright (C) 2014, Jean-Pierre de la Croix
+// see the LICENSE file included with this software
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
