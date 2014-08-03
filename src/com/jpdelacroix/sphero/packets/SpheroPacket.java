@@ -9,9 +9,10 @@ public abstract class SpheroPacket {
 	
 	public static enum SOP {
 		// SOP (Start Of Packet)
-		SOP1 (0xFF),
-		SOP2 (0xFF),
-		SOP2_ASYNC (0xFE);
+		DEFAULT (0xFF),
+		ASYNC (0xFE),
+		NORESET (0xFD),
+		NORESET_ASYNC (0xFC);
 		
 		private byte byteCode = 0x00;
 		
@@ -74,6 +75,7 @@ public abstract class SpheroPacket {
 	};
 	
 	protected ByteArrayOutputStream byteDataBuffer = new ByteArrayOutputStream();
+	protected boolean isAsynchronous = false;
 	
 	public String toString() {
 		if(byteDataBuffer.size() > 0) {
@@ -94,6 +96,10 @@ public abstract class SpheroPacket {
 			return byteDataBuffer.toByteArray();
 		}
 		return null;
+	}
+	
+	public boolean isAsynchronous() {
+		return isAsynchronous;
 	}
 
 }
