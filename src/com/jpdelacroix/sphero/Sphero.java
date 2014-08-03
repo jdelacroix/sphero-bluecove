@@ -12,6 +12,9 @@ import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
+import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
+import com.jpdelacroix.sphero.packets.SpheroPacket;
+
 public class Sphero extends RemoteDevice {
 	
 	private String spheroURL = null;
@@ -93,7 +96,7 @@ public class Sphero extends RemoteDevice {
 	
 	public void setRgbLedColor(byte r, byte g, byte b, boolean isPersistant) {
 		byte[] data = { r, g, b, (byte) (isPersistant ? 1 : 0) };
-		writeCommand(new SpheroCommand(SpheroCommand.CID_SET_RGB_LED, data, data.length));
+		send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
 	}
 	
 	public void setRgbLedColor(byte r, byte g, byte b) {
@@ -103,7 +106,7 @@ public class Sphero extends RemoteDevice {
 	public void setBackLedBrightness(int brightness) {
 		if (brightness >=0 && brightness <= 255) {
 			byte[] data = { (byte) brightness };
-			writeCommand(new SpheroCommand(SpheroCommand.CID_SET_BACK_LED, data, data.length));
+			send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_BACK_LED, data, data.length));
 		} else {
 			System.err.println("Expected integer brightness in range [0,255].");
 		}
@@ -112,16 +115,16 @@ public class Sphero extends RemoteDevice {
 	public void setRelativeHeading(int heading) {
 		if (heading >=0 && heading <= 359) {
 			byte[] data = { (byte) (heading >> 8), (byte) heading };
-			writeCommand(new SpheroCommand(SpheroCommand.CID_SET_HEADING, data, data.length));
+			send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_CAL, data, data.length));
 		} else {
 			System.err.println("Expected integer heading in range [0,359].");
 		}
 	}
 	
-	private void writeCommand(SpheroCommand command) {
+	private void send(SpheroCommandPacket packet) {
 		if(isConnected) {
 			try {
-				spheroCommandLine.write(command.toByteArray());
+				spheroCommandLine.write(packet.toByteArray());
 //				while(spheroResponseLine.available() > 0) {
 //					byte[] responseBuffer = new byte[spheroResponseLine.available()];
 //					spheroResponseLine.read(responseBuffer, 0, responseBuffer.length);

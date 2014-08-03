@@ -14,18 +14,14 @@ public class SpheroNexus {
 		
 		Sphero s = new Sphero("00066644239C", "Sphero-OYW", Sphero.SPP_DEFAULT_CHANNEL);
 		
-//		for(Sphero s : nearbySpheros) {
-			s.connect();
-			s.setRgbLedColor("FF1493");
-//			s.setBackLedBrightness(128);
-//			s.setRelativeHeading(180);
-//			s.setRelativeHeading(0);
-//			s.setBackLedBrightness(0);
-			Thread.sleep(2000);
-			s.setRgbLedColor("008ccc");
-			Thread.sleep(2000);
-			s.disconnect();
-////		}
+		String[] colorSequence = { "00B7EB", "FF0090", "FFEF00", "000000" };
+		
+		s.connect();
+		for(String color : colorSequence) {
+			s.setRgbLedColor(color, true);
+			Thread.sleep(200);
+		}
+		s.disconnect();
 		
 		System.out.println("Done.");
 	}
