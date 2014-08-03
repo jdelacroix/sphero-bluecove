@@ -108,11 +108,11 @@ public abstract class SpheroPacket {
 	}
 	
 	protected byte computeChecksum(byte[] byteArray, int length) {
-		byte checksum = 0;
-		for(int i=2; i<(length-1); i++) {
-			checksum += byteArray[i];
-		}
-		return (byte) (checksum ^ 0xFF);
+		byte checksum = 0;					// + checksum is last byte in the packet
+		for(int i=2; i<(length-1); i++) {	// + sum of all bytes starting after the
+			checksum += byteArray[i];		//   first two SOP bytes until the end
+		}									//   of the data payload.
+		return (byte) (checksum ^ 0xFF);	// + bit-wise inverse
 	}
 
 }
