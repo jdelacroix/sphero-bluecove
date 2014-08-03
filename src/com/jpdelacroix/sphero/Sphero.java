@@ -14,6 +14,7 @@ import javax.microedition.io.StreamConnection;
 
 import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
 import com.jpdelacroix.sphero.packets.SpheroPacket;
+import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 
 public class Sphero extends RemoteDevice {
 	
@@ -86,7 +87,7 @@ public class Sphero extends RemoteDevice {
 			byte b = (byte) Integer.parseInt(hexColor.substring(4,6), 16);
 			setRgbLedColor(r, g, b, isPersistant);
 		} else {
-			System.out.println("Unable to parse and set RGB LED color. Expected, for example, setRgbLedColor(\"FF1493\").");
+			System.out.println("Unable to parse hexidecimal color for RGB LED. Expected, for example, ff1493.");
 		}
 	}
 	
@@ -96,7 +97,7 @@ public class Sphero extends RemoteDevice {
 	
 	public void setRgbLedColor(byte r, byte g, byte b, boolean isPersistant) {
 		byte[] data = { r, g, b, (byte) (isPersistant ? 1 : 0) };
-		send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
+		send(new SpheroCommandPacket(SpheroPacket.SOP.DEFAULT, SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
 	}
 	
 	public void setRgbLedColor(byte r, byte g, byte b) {
@@ -125,11 +126,13 @@ public class Sphero extends RemoteDevice {
 		if(isConnected) {
 			try {
 				spheroCommandLine.write(packet.toByteArray());
-//				while(spheroResponseLine.available() > 0) {
-//					byte[] responseBuffer = new byte[spheroResponseLine.available()];
-//					spheroResponseLine.read(responseBuffer, 0, responseBuffer.length);
-//					System.out.println(Arrays.toString(responseBuffer));
-//				}
+				if(!packet.isAsynchronous()) {
+					while(spheroResponseLine.available() > 0) {
+						byte[] responseBuffer = new byte[spheroResponseLine.available()];
+						spheroResponseLine.read(responseBuffer, 0, responseBuffer.length);
+						System.out.println(new SpheroResponsePacket(responseBuffer, responseBuffer.length));
+					}
+				}
 			} catch (IOException e) {
 				System.err.println("Unable to write command to Sphero (" + spheroFriendlyName + ").");
 			}

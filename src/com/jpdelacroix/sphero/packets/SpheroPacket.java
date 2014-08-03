@@ -77,13 +77,14 @@ public abstract class SpheroPacket {
 	protected ByteArrayOutputStream byteDataBuffer = new ByteArrayOutputStream();
 	protected boolean isAsynchronous = false;
 	
+	@Override
 	public String toString() {
 		if(byteDataBuffer.size() > 0) {
 			StringBuffer outputBuffer = new StringBuffer();
 			outputBuffer.append("[ ");
 			byte[] byteArray = toByteArray();
 			for(byte b : byteArray) {
-				outputBuffer.append(String.format("%02X", b));
+				outputBuffer.append(String.format("%02X ", b));
 			}
 			outputBuffer.append("]");
 			return outputBuffer.toString();
@@ -100,6 +101,18 @@ public abstract class SpheroPacket {
 	
 	public boolean isAsynchronous() {
 		return isAsynchronous;
+	}
+	
+	protected byte computeChecksum() {
+		return computeChecksum(byteDataBuffer.toByteArray(), byteDataBuffer.size());
+	}
+	
+	protected byte computeChecksum(byte[] byteArray, int length) {
+		byte checksum = 0;
+		for(int i=2; i<(length-1); i++) {
+			checksum += byteArray[i];
+		}
+		return (byte) (checksum ^ 0xFF);
 	}
 
 }
