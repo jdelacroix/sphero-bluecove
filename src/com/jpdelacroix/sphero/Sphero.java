@@ -13,8 +13,10 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
 import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
+import com.jpdelacroix.sphero.packets.SpheroDataStreamingOptions;
 import com.jpdelacroix.sphero.packets.SpheroPacket;
 import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
+import com.jpdelacroix.sphero.util.DataByteArray;
 
 public class Sphero extends RemoteDevice {
 	
@@ -121,6 +123,25 @@ public class Sphero extends RemoteDevice {
 			System.err.println("Expected integer heading in range [0,359].");
 		}
 	}
+	
+	public void enableDataStreaming(SpheroDataStreamingOptions options) {
+		if (options != null) {
+			byte[] data = options.toByteArray();
+			send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
+		} else {
+			System.err.println("Expected a valid set of options.");
+		}
+	}
+	
+	public void disableDataStreaming() {
+		SpheroDataStreamingOptions options = new SpheroDataStreamingOptions();
+		options.addOptions(SpheroDataStreamingOptions.MASK.DISABLE);
+		
+		byte[] data = options.toByteArray();
+		send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
+	}
+	
+	// Utility Functions
 	
 	private void send(SpheroCommandPacket packet) {
 		if(isConnected) {

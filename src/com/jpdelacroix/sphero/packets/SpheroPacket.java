@@ -45,6 +45,7 @@ public abstract class SpheroPacket {
 	public static enum CID {
 		// CID (Command ID)
 		SET_CAL (0x01),
+		SET_DATA_STREAMING (0x11),
 		SET_RGB_LED (0x20),
 		SET_BACK_LED (0x21);
 		
