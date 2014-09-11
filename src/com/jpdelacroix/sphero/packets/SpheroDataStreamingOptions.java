@@ -50,11 +50,11 @@ public class SpheroDataStreamingOptions {
 		}	
 	}
 	
-	private int bitfieldMASK = 0;
-	private int bitfieldMASK2 = 0;
+	private int optionsMask = 0;
+	private int optionsMask2 = 0;
 	private int samplingRateFactor = 0;
-	private int frameCountPerPacket = 0;
-	private int packetCountPerStream = 0;
+	private int samplesPerPacket = 0;
+	private int packetsPerStream = 0;
 	
 	public void setSamplingRateFactor(int factor) {
 		// The sampling rate factor will divide the maximum sampling rate of 400Hz
@@ -66,20 +66,20 @@ public class SpheroDataStreamingOptions {
 		}
 	}
 	
-	public void setFrameCountPerPacket(int nFrames) {
-		if (nFrames > 0 && nFrames <= Short.MAX_VALUE) {
-			frameCountPerPacket = nFrames;
+	public void setSamplesPerPacket(int nSamples) {
+		if (nSamples > 0 && nSamples <= Short.MAX_VALUE) {
+			samplesPerPacket = nSamples;
 		} else {
 			System.err.println("Frames per packet has to be greater than zero.");
 		}
 	}
 	
-	public void setPacketCountPerStream(int nPackets) {
+	public void setPacketsPerStream(int nPackets) {
 		if (nPackets == 0) {
-			packetCountPerStream = nPackets;
+			packetsPerStream = nPackets;
 			System.err.println("Data stream from Sphero will continue until it is disabled.");
 		} else if (nPackets > 0 && nPackets <= 255) {
-			packetCountPerStream = nPackets;
+			packetsPerStream = nPackets;
 			System.out.println("Data stream from Sphero will end after " + nPackets + " packet(s).");
 		} else {
 			System.err.println("Packets per stream has to be zero for unlimited or greater than zero.");
@@ -88,25 +88,25 @@ public class SpheroDataStreamingOptions {
 	
 	public void addOptions(MASK... optionBitMasks) {
 		for (MASK option : optionBitMasks) {
-			bitfieldMASK |= option.getOptionBitMask();
+			optionsMask |= option.getOptionBitMask();
 		}
 	}
 	
 	public void addOptions(MASK2... optionBitMasks) {
 		for (MASK2 option : optionBitMasks) {
-			bitfieldMASK2 |= option.getOptionBitMask();
+			optionsMask2 |= option.getOptionBitMask();
 		}
 	}
 	
 	public byte[] toByteArray() {
 		DataByteArray array = new DataByteArray();
 		
-		array.write(samplingRateFactor, 2);
-		array.write(frameCountPerPacket, 2);
-		array.write(bitfieldMASK, 4);
-		array.write(packetCountPerStream);
-		if (bitfieldMASK2 != 0) {
-			array.write(bitfieldMASK2, 4);
+		array.writeTwoBytes(samplingRateFactor);
+		array.writeTwoBytes(samplesPerPacket);
+		array.writeFourBytes(optionsMask);
+		array.writeOneByte(packetsPerStream);
+		if (optionsMask2 != 0) {
+			array.writeFourBytes(optionsMask2);
 		}
 		
 		return array.toByteArray();
