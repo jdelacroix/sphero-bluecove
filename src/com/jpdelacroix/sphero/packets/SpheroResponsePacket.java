@@ -7,13 +7,14 @@ public class SpheroResponsePacket extends SpheroPacket {
 	
 	private boolean isErrorFree = false;
 	
-	public SpheroResponsePacket(byte[] byteArray, int length) {
-		byteDataBuffer.write(byteArray, 0, length);
+	public SpheroResponsePacket(byte[] byteArray, boolean isAsynchronous) {
+		byteDataBuffer.write(byteArray, 0, byteArray.length);
 		byte checksum = computeChecksum(byteArray, byteArray.length);
-		isErrorFree = (checksum == byteArray[length-1]);
+		isErrorFree = (checksum == byteArray[byteArray.length-1]);
 		if(!isErrorFree) {
-			System.err.println("Invalid checksum detected. " + String.format("%02X vs %02X", checksum, byteArray[length-1]));
+			System.err.println("Invalid checksum detected. " + String.format("%02X vs %02X", checksum, byteArray[byteArray.length-1]));
 		}
+		this.isAsynchronous = isAsynchronous;
 	}
 	
 	public boolean isErrorFree() {

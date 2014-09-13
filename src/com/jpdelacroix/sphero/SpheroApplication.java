@@ -1,5 +1,9 @@
 package com.jpdelacroix.sphero;
 
+import java.util.ArrayList;
+
+import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
+
 //Copyright (C) 2014, Jean-Pierre de la Croix
 //see the LICENSE file included with this software
 
@@ -25,7 +29,10 @@ public class SpheroApplication implements Runnable {
 			}
 		}
 		
-		
+		ArrayList<SpheroResponsePacket> allResponses = roboticBall.getAllResponses();
+		for (SpheroResponsePacket r : allResponses) {
+			System.out.println(r);
+		}
 	}
 
 }

@@ -6,6 +6,8 @@ package com.jpdelacroix.sphero;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+
 import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
@@ -137,6 +139,16 @@ public class Sphero extends RemoteDevice {
 		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
 	}
 	
+	public SpheroResponsePacket getNextResponse() {
+		if (spheroDataChannel.numberOfQueuedResponses() > 0) {
+			return spheroDataChannel.receive();
+		}
+		System.out.println("No responses from Sphero are currently in the queue.");
+		return null;
+	}
 	
+	public ArrayList<SpheroResponsePacket> getAllResponses() {
+		return spheroDataChannel.receiveAll();
+	}
 
 }
