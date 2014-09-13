@@ -89,7 +89,7 @@ public class SpheroDataStreamingOptions {
 	public void setPacketsPerStream(int nPackets) {
 		if (nPackets == 0) {
 			packetsPerStream = nPackets;
-			System.err.println("Data stream from Sphero will continue until it is disabled.");
+			System.out.println("Data stream from Sphero will continue until it is disabled.");
 		} else if (nPackets > 0 && nPackets <= 255) {
 			packetsPerStream = nPackets;
 			System.out.println("Data stream from Sphero will end after " + nPackets + " packet(s).");

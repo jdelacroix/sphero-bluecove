@@ -15,9 +15,9 @@ public class SpheroNexus {
 //		ArrayList<Sphero> nearbySpheros = discoverer.findNearbySpheros();
 		
 		Sphero s = new Sphero("00066644239C", "Sphero-OYW", Sphero.SPP_DEFAULT_CHANNEL);
-				
+					
 		s.connect();
-		
+			
 		(new RunnableLauncher()).launch(new SpheroApplication(s));
 		
 		s.disconnect();

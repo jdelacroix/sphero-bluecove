@@ -10,9 +10,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.microedition.io.StreamConnection;
 
+import com.jpdelacroix.sphero.packets.SpheroAsynchronousPacket;
 import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
 import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 
@@ -27,14 +31,17 @@ public class SpheroDataChannel {
 	private BlockingQueue<SpheroResponsePacket> responseQueue = new LinkedBlockingQueue<>();
 	private BlockingQueue<SpheroCommandPacket> commandQueue = new LinkedBlockingQueue<>();
 	
-	private final ResponseProcessor responseProcessor = new ResponseProcessor();
-	private final CommandProcessor commandProcessor = new CommandProcessor();
+	private final InboundProcessor inboundProcessor = new InboundProcessor();
+	private final OutboundProcessor outboundProcessor = new OutboundProcessor();
 	
 	private final ExecutorService processingService = Executors.newFixedThreadPool(2);
 	
-	public SpheroDataChannel(StreamConnection connection, String friendlyName) {
+	private SpheroHeartbeat spheroHeartbeat = null;
+	
+	public SpheroDataChannel(StreamConnection connection, String friendlyName, SpheroHeartbeat aHeartbeat) {
 		spheroConnection = connection;
 		spheroFriendlyName = friendlyName;
+		spheroHeartbeat = aHeartbeat;
 	}
 	
 	public void send(SpheroCommandPacket packet) {
@@ -48,8 +55,8 @@ public class SpheroDataChannel {
 	public SpheroResponsePacket receive() {
 		SpheroResponsePacket response = null;
 		try {
-			while (response == null && responseProcessor.isRunning()) {
-				response = responseQueue.poll(10, TimeUnit.SECONDS);
+			while (response == null && inboundProcessor.isRunning()) {
+				response = responseQueue.poll(1, TimeUnit.SECONDS);
 			}
 		} catch (InterruptedException e) {
 			System.err.println("Receiving response from the queue was interrupted.");
@@ -72,8 +79,8 @@ public class SpheroDataChannel {
 		spheroResponseLine = spheroConnection.openDataInputStream();
 		
 		if(!processingService.isShutdown()) {
-			processingService.execute(responseProcessor);
-			processingService.execute(commandProcessor);
+			processingService.execute(inboundProcessor);
+			processingService.execute(outboundProcessor);
 		}
 	}
 	
@@ -83,25 +90,36 @@ public class SpheroDataChannel {
 		spheroResponseLine.close();
 	}
 	
-	private class CommandProcessor implements Runnable {
+	private class OutboundProcessor implements Runnable {
 
+		private boolean isRunning = false;
+		
 		@Override
 		public void run() {
-			while (!processingService.isShutdown()) {
-				try {
+			isRunning = true;
+			try {
+				while (!processingService.isShutdown()) {
 					SpheroCommandPacket packet = commandQueue.take();
 					spheroCommandLine.write(packet.toByteArray());
-				} catch (InterruptedException e) {
-					System.err.println("Writing command to Sphero (" + spheroFriendlyName + ") was interrupted.");
-				} catch (IOException e) {
-					System.err.println("Unable to write command to Sphero (" + spheroFriendlyName + ").");
 				}
+			} catch (InterruptedException e) {
+				System.err.println("Writing command to Sphero (" + spheroFriendlyName + ") was interrupted.");
+			} catch (IOException e) {
+				System.err.println("Unable to write command to Sphero (" + spheroFriendlyName + ").");
+			} finally {
+				spheroHeartbeat.kill();
+				isRunning = false;
 			}
+		
+		}
+		
+		public boolean isRunning() {
+			return isRunning();
 		}
 		
 	}
 	
-	private class ResponseProcessor implements Runnable {
+	private class InboundProcessor implements Runnable {
 		
 		private boolean isRunning = false;
 		
@@ -141,7 +159,12 @@ public class SpheroDataChannel {
 					}
 					responseBuffer.write(spheroResponseLine.readByte());			// CHK
 					
-					SpheroResponsePacket response = new SpheroResponsePacket(responseBuffer.toByteArray(), isAsynchronous);
+					SpheroResponsePacket response = null;
+					if (isAsynchronous) {
+						response = new SpheroResponsePacket(responseBuffer.toByteArray());
+					} else {
+						response = new SpheroAsynchronousPacket(responseBuffer.toByteArray());
+					}
 //					System.out.println(response);
 					responseQueue.put(response);
 				}
@@ -150,6 +173,7 @@ public class SpheroDataChannel {
 			} catch (InterruptedException e) {
 				System.err.println("Reading response from Sphero (" + spheroFriendlyName + ") was interrupted.");
 			} finally {
+				spheroHeartbeat.kill();
 				isRunning = false;
 			}
 		}

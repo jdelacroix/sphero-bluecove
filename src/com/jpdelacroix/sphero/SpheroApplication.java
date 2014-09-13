@@ -2,6 +2,7 @@ package com.jpdelacroix.sphero;
 
 import java.util.ArrayList;
 
+import com.jpdelacroix.sphero.packets.SpheroDataStreamingOptions;
 import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 
 //Copyright (C) 2014, Jean-Pierre de la Croix
@@ -12,7 +13,7 @@ public class SpheroApplication implements Runnable {
 	private Sphero roboticBall = null;
 	
 	public SpheroApplication(Sphero aSphero) {
-		roboticBall = aSphero;
+		this.roboticBall = aSphero;
 	}
 	
 	@Override
@@ -27,7 +28,6 @@ public class SpheroApplication implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			System.out.println(roboticBall.getNextResponse());
 		}
 		
 		ArrayList<SpheroResponsePacket> allResponses = roboticBall.getAllResponses();
@@ -35,7 +35,19 @@ public class SpheroApplication implements Runnable {
 			System.out.println(r);
 		}
 		
-		System.out.println(roboticBall.waitForNextResponse());
+		setStreamingOptions();
+		
+		while (roboticBall.isConnected()) {
+			System.out.println(roboticBall.waitForNextResponse());
+		}
+	}
+	
+	public void setStreamingOptions() {
+		SpheroDataStreamingOptions options = new SpheroDataStreamingOptions(200, 1, 4);
+		options.addOptions(SpheroDataStreamingOptions.MASK.IMU_PITCH_ANGLE_FILTERED, SpheroDataStreamingOptions.MASK.IMU_ROLL_ANGLE_FILTERED, SpheroDataStreamingOptions.MASK.IMU_YAW_ANGLE_FILTERED);
+		options.addOptions(SpheroDataStreamingOptions.MASK2.QUARTERNION_Q0, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q1, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q2, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q3);
+		roboticBall.enableDataStreaming(options);
 	}
 
+	
 }

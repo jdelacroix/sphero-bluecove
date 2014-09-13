@@ -3,10 +3,10 @@ package com.jpdelacroix.sphero;
 // Copyright (C) 2014, Jean-Pierre de la Croix
 // see the LICENSE file included with this software
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.Connector;
@@ -19,14 +19,18 @@ import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 
 public class Sphero extends RemoteDevice {
 	
+	public static final int SPP_DEFAULT_CHANNEL = 1;
+	
 	private String spheroURL = null;
 	private StreamConnection spheroConnection = null;
 	private SpheroDataChannel spheroDataChannel = null;
 	private String spheroFriendlyName = null;
     private boolean isConnected = false;
-	
-	public static final int SPP_DEFAULT_CHANNEL = 1;
-	
+    
+    // Heartbeat
+    private ExecutorService heartbeatService;
+    private SpheroHeartbeat spheroHeartbeat = new SpheroHeartbeat();
+		
 	public Sphero(String address, String name, int sppChannel) {
 		super(address);
 		this.spheroURL = "btspp://" + address + ":" + sppChannel + ";authenticate=false;encrypt=false;master=false";
@@ -48,8 +52,9 @@ public class Sphero extends RemoteDevice {
 	public void connect() {
         if(!isConnected) {
         	try {
+        		startHeartbeat();
 				spheroConnection = (StreamConnection) Connector.open(spheroURL);
-				spheroDataChannel = new SpheroDataChannel(spheroConnection, spheroFriendlyName);
+				spheroDataChannel = new SpheroDataChannel(spheroConnection, spheroFriendlyName, spheroHeartbeat);
 				spheroDataChannel.open();
 				isConnected = true;
 			} catch (IOException e) {
@@ -66,16 +71,42 @@ public class Sphero extends RemoteDevice {
 				spheroDataChannel.close();
 				spheroConnection.close();
 				isConnected = false;
+				stopHeartbeat();
 			} catch (IOException e) {
-				System.err.println("Unable to disconnect from the Sphero: " + this.getBluetoothAddress() + "  " + spheroFriendlyName);
+				System.err.println("Unable to disconnect from the Sphero (" + spheroFriendlyName + ").");
 			}
 		} else {
 			System.err.println("Sphero (" + spheroFriendlyName + ") is already disconnected.");
 		}
 	}
 	
+	public boolean isConnected() {
+		return isConnected;
+	}
+	
 	public String getFriendlyName() {
 		return this.spheroFriendlyName;
+	}
+	
+	// Heartbeat 
+	
+	private void startHeartbeat() {
+		heartbeatService = Executors.newCachedThreadPool();
+		this.addHeartbeatListener(new SpheroHeartbeatListener() {
+			@Override
+			public void onChange() {
+				disconnect();
+			}
+		});
+	}
+	
+	private void stopHeartbeat() {
+		heartbeatService.shutdown();
+	}
+	
+	private void addHeartbeatListener(SpheroHeartbeatListener aListener) {
+		aListener.setHeartbeat(spheroHeartbeat);
+		heartbeatService.execute(aListener);
 	}
 	
 	// Sphero Command Set
@@ -138,6 +169,8 @@ public class Sphero extends RemoteDevice {
 		byte[] data = options.toByteArray();
 		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
 	}
+	
+	// Data Channel access
 	
 	public SpheroResponsePacket getNextResponse() {
 		if (spheroDataChannel.numberOfQueuedResponses() > 0) {

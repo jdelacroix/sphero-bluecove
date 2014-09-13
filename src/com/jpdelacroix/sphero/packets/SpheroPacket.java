@@ -75,6 +75,21 @@ public abstract class SpheroPacket {
 		}
 	};
 	
+	public static enum ID_CODE {
+		// ID_CODE
+		SENSOR_DATA_STREAMING (0x03);
+		
+		private byte byteCode = 0x00;
+		
+		ID_CODE(int aByteCode) {
+			this.byteCode = (byte) aByteCode;
+		}
+		
+		public byte getByteCode() {
+			return this.byteCode;
+		}
+	};
+	
 	protected ByteArrayOutputStream byteDataBuffer = new ByteArrayOutputStream();
 	protected boolean isAsynchronous = false;
 	
