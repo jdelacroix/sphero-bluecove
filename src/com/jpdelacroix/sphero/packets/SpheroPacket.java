@@ -3,8 +3,6 @@ package com.jpdelacroix.sphero.packets;
 //Copyright (C) 2014, Jean-Pierre de la Croix
 //see the LICENSE file included with this software
 
-import java.io.ByteArrayOutputStream;
-
 public abstract class SpheroPacket {
 	
 	public static enum SOP {
@@ -90,16 +88,15 @@ public abstract class SpheroPacket {
 		}
 	};
 	
-	protected ByteArrayOutputStream byteDataBuffer = new ByteArrayOutputStream();
+	protected byte[] internalByteArray = null;
 	protected boolean isAsynchronous = false;
 	
 	@Override
 	public String toString() {
-		if(byteDataBuffer.size() > 0) {
+		if(internalByteArray.length > 0) {
 			StringBuffer outputBuffer = new StringBuffer();
 			outputBuffer.append("[ ");
-			byte[] byteArray = toByteArray();
-			for(byte b : byteArray) {
+			for(byte b : internalByteArray) {
 				outputBuffer.append(String.format("%02X ", b));
 			}
 			outputBuffer.append("]");
@@ -109,8 +106,8 @@ public abstract class SpheroPacket {
 	}
 	
 	public byte[] toByteArray() {
-		if(byteDataBuffer.size() > 0) {
-			return byteDataBuffer.toByteArray();
+		if(internalByteArray.length > 0) {
+			return internalByteArray.clone();
 		}
 		return null;
 	}
@@ -124,7 +121,7 @@ public abstract class SpheroPacket {
 		for(int i=2; i<(length-1); i++) {			// + sum of all bytes starting after the
 			checksum += byteArray[i];				//   first two SOP bytes until the end
 		}											//   of the data payload.
-	return (byte) (checksum ^ (byte) 0xFF);			// + bit-wise inverse
+		return (byte) (checksum ^ (byte) 0xFF);		// + bit-wise inverse
 	}
 
 }

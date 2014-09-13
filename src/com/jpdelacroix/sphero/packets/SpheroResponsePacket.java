@@ -8,7 +8,8 @@ public class SpheroResponsePacket extends SpheroPacket {
 	private boolean isErrorFree = false;
 	
 	public SpheroResponsePacket(byte[] byteArray) {
-		byteDataBuffer.write(byteArray, 0, byteArray.length);
+//		byteStream.write(byteArray, 0, byteArray.length);
+		internalByteArray = byteArray.clone();
 		byte checksum = computeChecksum(byteArray, byteArray.length);
 		isErrorFree = (checksum == byteArray[byteArray.length-1]);
 		if(!isErrorFree) {

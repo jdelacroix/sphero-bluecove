@@ -1,4 +1,5 @@
-package com.jpdelacroix.sphero;
+package com.jpdelacroix.sphero.heartbeat;
+
 
 //Copyright (C) 2014, Jean-Pierre de la Croix
 //see the LICENSE file included with this software

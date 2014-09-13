@@ -1,4 +1,4 @@
-package com.jpdelacroix.sphero;
+package com.jpdelacroix.sphero.heartbeat;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;

@@ -110,6 +110,14 @@ public class SpheroDataStreamingOptions {
 		}
 	}
 	
+	public int getOptionsMask() {
+		return optionsMask;
+	}
+	
+	public int getOptionsMask2() {
+		return optionsMask2;
+	}
+	
 	public byte[] toByteArray() {
 		DataByteArray array = new DataByteArray();
 		

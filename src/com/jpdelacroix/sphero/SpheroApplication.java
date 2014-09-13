@@ -1,7 +1,9 @@
 package com.jpdelacroix.sphero;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import com.jpdelacroix.sphero.packets.SpheroAsynchronousPacket;
 import com.jpdelacroix.sphero.packets.SpheroDataStreamingOptions;
 import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 
@@ -11,9 +13,13 @@ import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 public class SpheroApplication implements Runnable {
 
 	private Sphero roboticBall = null;
+	private SpheroDataStreamingOptions options = new SpheroDataStreamingOptions(200, 1, 4);
 	
 	public SpheroApplication(Sphero aSphero) {
 		this.roboticBall = aSphero;
+		options.addOptions(SpheroDataStreamingOptions.MASK.IMU_PITCH_ANGLE_FILTERED, SpheroDataStreamingOptions.MASK.IMU_ROLL_ANGLE_FILTERED, SpheroDataStreamingOptions.MASK.IMU_YAW_ANGLE_FILTERED);
+		options.addOptions(SpheroDataStreamingOptions.MASK2.QUARTERNION_Q0, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q1, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q2, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q3);
+		this.roboticBall.enableDataStreaming(options);
 	}
 	
 	@Override
@@ -30,23 +36,22 @@ public class SpheroApplication implements Runnable {
 			}
 		}
 		
-		ArrayList<SpheroResponsePacket> allResponses = roboticBall.getAllResponses();
-		for (SpheroResponsePacket r : allResponses) {
-			System.out.println(r);
-		}
-		
-		setStreamingOptions();
-		
+//		ArrayList<SpheroResponsePacket> allResponses = roboticBall.getAllPackets();
+//		for (SpheroResponsePacket r : allResponses) {
+//			System.out.println(r);
+//		}
+				
 		while (roboticBall.isConnected()) {
-			System.out.println(roboticBall.waitForNextResponse());
+			SpheroResponsePacket packet = roboticBall.waitForNextPacket();
+			if (packet.isAsynchronous()) {
+				System.out.println("");
+				System.out.println(packet);
+				HashMap<String, Integer> data = ((SpheroAsynchronousPacket) packet).parseDataWithOptions(options);
+				for (String name : data.keySet()) {
+					System.out.println(name + " : " + data.get(name));
+				}
+			}
 		}
-	}
-	
-	public void setStreamingOptions() {
-		SpheroDataStreamingOptions options = new SpheroDataStreamingOptions(200, 1, 4);
-		options.addOptions(SpheroDataStreamingOptions.MASK.IMU_PITCH_ANGLE_FILTERED, SpheroDataStreamingOptions.MASK.IMU_ROLL_ANGLE_FILTERED, SpheroDataStreamingOptions.MASK.IMU_YAW_ANGLE_FILTERED);
-		options.addOptions(SpheroDataStreamingOptions.MASK2.QUARTERNION_Q0, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q1, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q2, SpheroDataStreamingOptions.MASK2.QUARTERNION_Q3);
-		roboticBall.enableDataStreaming(options);
 	}
 
 	

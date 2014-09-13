@@ -16,8 +16,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.microedition.io.StreamConnection;
 
+import com.jpdelacroix.sphero.heartbeat.SpheroHeartbeat;
 import com.jpdelacroix.sphero.packets.SpheroAsynchronousPacket;
 import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
+import com.jpdelacroix.sphero.packets.SpheroPacket;
 import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 
 public class SpheroDataChannel {
@@ -28,8 +30,8 @@ public class SpheroDataChannel {
 	private DataOutputStream spheroCommandLine = null;
 	private DataInputStream spheroResponseLine = null;
 	
-	private BlockingQueue<SpheroResponsePacket> responseQueue = new LinkedBlockingQueue<>();
-	private BlockingQueue<SpheroCommandPacket> commandQueue = new LinkedBlockingQueue<>();
+	private BlockingQueue<SpheroResponsePacket> incomingQueue = new LinkedBlockingQueue<>();
+	private BlockingQueue<SpheroCommandPacket> outgoingQueue = new LinkedBlockingQueue<>();
 	
 	private final InboundProcessor inboundProcessor = new InboundProcessor();
 	private final OutboundProcessor outboundProcessor = new OutboundProcessor();
@@ -46,7 +48,7 @@ public class SpheroDataChannel {
 	
 	public void send(SpheroCommandPacket packet) {
 		try {
-			commandQueue.put(packet);
+			outgoingQueue.put(packet);
 		} catch (InterruptedException e) {
 			System.err.println("Sending command to the queue was interrupted.");
 		}
@@ -56,7 +58,7 @@ public class SpheroDataChannel {
 		SpheroResponsePacket response = null;
 		try {
 			while (response == null && inboundProcessor.isRunning()) {
-				response = responseQueue.poll(1, TimeUnit.SECONDS);
+				response = incomingQueue.poll(1, TimeUnit.SECONDS);
 			}
 		} catch (InterruptedException e) {
 			System.err.println("Receiving response from the queue was interrupted.");
@@ -66,12 +68,12 @@ public class SpheroDataChannel {
 	
 	public ArrayList<SpheroResponsePacket> receiveAll() {
 		ArrayList<SpheroResponsePacket> allQueuedResponses = new ArrayList<>();
-		responseQueue.drainTo(allQueuedResponses);
+		incomingQueue.drainTo(allQueuedResponses);
 		return allQueuedResponses;
 	}
 	
 	public int numberOfQueuedResponses() {
-		return responseQueue.size();
+		return incomingQueue.size();
 	}
 	
 	public void open() throws IOException {
@@ -99,7 +101,7 @@ public class SpheroDataChannel {
 			isRunning = true;
 			try {
 				while (!processingService.isShutdown()) {
-					SpheroCommandPacket packet = commandQueue.take();
+					SpheroCommandPacket packet = outgoingQueue.take();
 					spheroCommandLine.write(packet.toByteArray());
 				}
 			} catch (InterruptedException e) {
@@ -128,45 +130,44 @@ public class SpheroDataChannel {
 			isRunning = true;
 			try {
 				while (!processingService.isShutdown()) {
-					ByteArrayOutputStream responseBuffer = new ByteArrayOutputStream();
+					ByteArrayOutputStream incomingByteStream = new ByteArrayOutputStream();
 					
-					responseBuffer.write(spheroResponseLine.readByte()); 			// SOP1
+					incomingByteStream.write(spheroResponseLine.readByte()); 			// SOP1
 					byte SOP2 = spheroResponseLine.readByte();
-					responseBuffer.write(SOP2);										// SOP2
+					incomingByteStream.write(SOP2);										// SOP2
 					
-					int dataLength = 0;
+					int lengthOfData = 0;
 					boolean isAsynchronous = false;
-					if (SOP2 == (byte) (0xFF)) {
+					if (SOP2 == SpheroPacket.SOP.DEFAULT.getByteCode()) {
 						// ACK						
-						responseBuffer.write(spheroResponseLine.readByte());		// MSRP
-						responseBuffer.write(spheroResponseLine.readByte());		// SEQ
+						incomingByteStream.write(spheroResponseLine.readByte());		// MSRP
+						incomingByteStream.write(spheroResponseLine.readByte());		// SEQ
 						byte DLEN = spheroResponseLine.readByte();
-						responseBuffer.write(DLEN);									// DLEN
-						dataLength = DLEN;
-					} else if (SOP2 == (byte) (0xFE)) {
+						incomingByteStream.write(DLEN);									// DLEN
+						lengthOfData = DLEN;
+					} else if (SOP2 == SpheroPacket.SOP.ASYNC.getByteCode()) {
 						// ASYNC
 						isAsynchronous = true;					
-						responseBuffer.write(spheroResponseLine.readByte());		// ID CODE
+						incomingByteStream.write(spheroResponseLine.readByte());		// ID CODE
 						byte DLEN_MSB = spheroResponseLine.readByte();				
-						responseBuffer.write(DLEN_MSB);								// DLEN MSB
+						incomingByteStream.write(DLEN_MSB);								// DLEN MSB
 						byte DLEN_LSB = spheroResponseLine.readByte();
-						responseBuffer.write(DLEN_LSB);								// DLEN LSB
-						dataLength = (DLEN_MSB << 8) | (DLEN_LSB); 
+						incomingByteStream.write(DLEN_LSB);								// DLEN LSB
+						lengthOfData = (DLEN_MSB << 8) | (DLEN_LSB); 
 					}
 
-					for (int i=0; i<(dataLength-1); i++) {
-						responseBuffer.write(spheroResponseLine.readByte());		// DATA
+					for (int i=0; i<(lengthOfData-1); i++) {
+						incomingByteStream.write(spheroResponseLine.readByte());		// DATA
 					}
-					responseBuffer.write(spheroResponseLine.readByte());			// CHK
+					incomingByteStream.write(spheroResponseLine.readByte());			// CHK
 					
-					SpheroResponsePacket response = null;
+					SpheroResponsePacket packet = null;
 					if (isAsynchronous) {
-						response = new SpheroResponsePacket(responseBuffer.toByteArray());
+						packet = new SpheroAsynchronousPacket(incomingByteStream.toByteArray());
 					} else {
-						response = new SpheroAsynchronousPacket(responseBuffer.toByteArray());
+						packet = new SpheroResponsePacket(incomingByteStream.toByteArray());
 					}
-//					System.out.println(response);
-					responseQueue.put(response);
+					incomingQueue.put(packet);
 				}
 			} catch (IOException e) {
 				System.err.println("Unable to read response from Sphero (" + spheroFriendlyName + "), because channel closed.");

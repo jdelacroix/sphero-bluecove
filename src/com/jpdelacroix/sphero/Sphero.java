@@ -12,6 +12,8 @@ import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
+import com.jpdelacroix.sphero.heartbeat.SpheroHeartbeat;
+import com.jpdelacroix.sphero.heartbeat.SpheroHeartbeatListener;
 import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
 import com.jpdelacroix.sphero.packets.SpheroDataStreamingOptions;
 import com.jpdelacroix.sphero.packets.SpheroPacket;
@@ -91,7 +93,7 @@ public class Sphero extends RemoteDevice {
 	// Heartbeat 
 	
 	private void startHeartbeat() {
-		heartbeatService = Executors.newCachedThreadPool();
+		heartbeatService = Executors.newSingleThreadExecutor();
 		this.addHeartbeatListener(new SpheroHeartbeatListener() {
 			@Override
 			public void onChange() {
@@ -172,19 +174,19 @@ public class Sphero extends RemoteDevice {
 	
 	// Data Channel access
 	
-	public SpheroResponsePacket getNextResponse() {
+	public SpheroResponsePacket getNextPacket() {
 		if (spheroDataChannel.numberOfQueuedResponses() > 0) {
 			return spheroDataChannel.receive();
 		}
-		System.out.println("No responses from Sphero are currently in the queue.");
+		System.out.println("No packets from Sphero (" + spheroFriendlyName + ") are currently in the queue.");
 		return null;
 	}
 	
-	public SpheroResponsePacket waitForNextResponse() {
+	public SpheroResponsePacket waitForNextPacket() {
 		return spheroDataChannel.receive();
 	}
 	
-	public ArrayList<SpheroResponsePacket> getAllResponses() {
+	public ArrayList<SpheroResponsePacket> getAllPackets() {
 		return spheroDataChannel.receiveAll();
 	}
 
