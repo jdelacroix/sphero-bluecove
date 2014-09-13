@@ -147,6 +147,10 @@ public class Sphero extends RemoteDevice {
 		return null;
 	}
 	
+	public SpheroResponsePacket waitForNextResponse() {
+		return spheroDataChannel.receive();
+	}
+	
 	public ArrayList<SpheroResponsePacket> getAllResponses() {
 		return spheroDataChannel.receiveAll();
 	}

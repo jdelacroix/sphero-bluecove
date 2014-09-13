@@ -27,12 +27,15 @@ public class SpheroApplication implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			System.out.println(roboticBall.getNextResponse());
 		}
 		
 		ArrayList<SpheroResponsePacket> allResponses = roboticBall.getAllResponses();
 		for (SpheroResponsePacket r : allResponses) {
 			System.out.println(r);
 		}
+		
+		System.out.println(roboticBall.waitForNextResponse());
 	}
 
 }

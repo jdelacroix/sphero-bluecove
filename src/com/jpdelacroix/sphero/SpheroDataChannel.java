@@ -9,6 +9,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.microedition.io.StreamConnection;
 
@@ -26,6 +27,9 @@ public class SpheroDataChannel {
 	private BlockingQueue<SpheroResponsePacket> responseQueue = new LinkedBlockingQueue<>();
 	private BlockingQueue<SpheroCommandPacket> commandQueue = new LinkedBlockingQueue<>();
 	
+	private final ResponseProcessor responseProcessor = new ResponseProcessor();
+	private final CommandProcessor commandProcessor = new CommandProcessor();
+	
 	private final ExecutorService processingService = Executors.newFixedThreadPool(2);
 	
 	public SpheroDataChannel(StreamConnection connection, String friendlyName) {
@@ -42,12 +46,15 @@ public class SpheroDataChannel {
 	}
 	
 	public SpheroResponsePacket receive() {
+		SpheroResponsePacket response = null;
 		try {
-			return responseQueue.take();
+			while (response == null && responseProcessor.isRunning()) {
+				response = responseQueue.poll(10, TimeUnit.SECONDS);
+			}
 		} catch (InterruptedException e) {
 			System.err.println("Receiving response from the queue was interrupted.");
 		}
-		return null;
+		return response;
 	}
 	
 	public ArrayList<SpheroResponsePacket> receiveAll() {
@@ -65,8 +72,8 @@ public class SpheroDataChannel {
 		spheroResponseLine = spheroConnection.openDataInputStream();
 		
 		if(!processingService.isShutdown()) {
-			processingService.execute(new ResponseProcessor());
-			processingService.execute(new CommandProcessor());
+			processingService.execute(responseProcessor);
+			processingService.execute(commandProcessor);
 		}
 	}
 	
@@ -94,11 +101,13 @@ public class SpheroDataChannel {
 		
 	}
 	
-	
 	private class ResponseProcessor implements Runnable {
+		
+		private boolean isRunning = false;
 		
 		@Override
 		public void run() {
+			isRunning = true;
 			try {
 				while (!processingService.isShutdown()) {
 					ByteArrayOutputStream responseBuffer = new ByteArrayOutputStream();
@@ -140,7 +149,13 @@ public class SpheroDataChannel {
 				System.err.println("Unable to read response from Sphero (" + spheroFriendlyName + "), because channel closed.");
 			} catch (InterruptedException e) {
 				System.err.println("Reading response from Sphero (" + spheroFriendlyName + ") was interrupted.");
+			} finally {
+				isRunning = false;
 			}
+		}
+		
+		public boolean isRunning() {
+			return isRunning;
 		}
 		
 	}
