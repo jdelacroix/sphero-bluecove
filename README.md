@@ -9,6 +9,7 @@ Supported functionality:
 + Receive Sphero response to any synchronous command packet or asynchronous data packets.
 + Can set RGB LED color, back LED brightness, and relative heading.
 + Enable/disable asynchronous data streaming.
++ Detect if Sphero has disconnected using a heartbeat.
 
 Unsupported functionality:
 
