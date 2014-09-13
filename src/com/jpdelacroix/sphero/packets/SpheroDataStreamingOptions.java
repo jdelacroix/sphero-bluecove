@@ -8,7 +8,7 @@ import com.jpdelacroix.sphero.util.DataByteArray;
 public class SpheroDataStreamingOptions {
 	
 	public static enum MASK {
-		DISABLE (0x0000),
+		DISABLE 						(0x00000000),
 		ACCELEROMETER_AXIS_X_RAW		(0x80000000),
 		ACCELEROMETER_AXIS_Y_RAW		(0x40000000),
 		ACCELEROMETER_AXIS_Z_RAW		(0x20000000),
@@ -52,9 +52,21 @@ public class SpheroDataStreamingOptions {
 	
 	private int optionsMask = 0;
 	private int optionsMask2 = 0;
-	private int samplingRateFactor = 0;
-	private int samplesPerPacket = 0;
-	private int packetsPerStream = 0;
+	
+	// DEFAULTS
+	private int samplingRateFactor = 1;		// 400Hz
+	private int samplesPerPacket = 1;		// 1 sample/packet
+	private int packetsPerStream = 1;		// 1 packet/stream
+	
+	public SpheroDataStreamingOptions(int factor, int nSamples, int nPackets) {
+		this.setSamplingRateFactor(factor);
+		this.setSamplesPerPacket(nSamples);
+		this.setPacketsPerStream(nPackets);
+	}
+	
+	public SpheroDataStreamingOptions() {
+		// accept defaults
+	}
 	
 	public void setSamplingRateFactor(int factor) {
 		// The sampling rate factor will divide the maximum sampling rate of 400Hz

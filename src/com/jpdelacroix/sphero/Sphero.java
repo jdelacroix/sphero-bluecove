@@ -3,11 +3,9 @@ package com.jpdelacroix.sphero;
 // Copyright (C) 2014, Jean-Pierre de la Croix
 // see the LICENSE file included with this software
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
-
 import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
@@ -16,14 +14,12 @@ import com.jpdelacroix.sphero.packets.SpheroCommandPacket;
 import com.jpdelacroix.sphero.packets.SpheroDataStreamingOptions;
 import com.jpdelacroix.sphero.packets.SpheroPacket;
 import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
-import com.jpdelacroix.sphero.util.DataByteArray;
 
 public class Sphero extends RemoteDevice {
 	
 	private String spheroURL = null;
 	private StreamConnection spheroConnection = null;
-	private OutputStream spheroCommandLine = null;
-	private InputStream spheroResponseLine = null;
+	private SpheroDataChannel spheroDataChannel = null;
 	private String spheroFriendlyName = null;
     private boolean isConnected = false;
 	
@@ -51,8 +47,8 @@ public class Sphero extends RemoteDevice {
         if(!isConnected) {
         	try {
 				spheroConnection = (StreamConnection) Connector.open(spheroURL);
-				spheroCommandLine = spheroConnection.openOutputStream();
-				spheroResponseLine = spheroConnection.openInputStream();
+				spheroDataChannel = new SpheroDataChannel(spheroConnection, spheroFriendlyName);
+				spheroDataChannel.open();
 				isConnected = true;
 			} catch (IOException e) {
 				System.err.println("Unable to connect to Sphero (" + spheroFriendlyName + ") at " + spheroURL);
@@ -65,7 +61,7 @@ public class Sphero extends RemoteDevice {
 	public void disconnect() {
 		if(isConnected) {
 			try {
-				spheroCommandLine.close();
+				spheroDataChannel.close();
 				spheroConnection.close();
 				isConnected = false;
 			} catch (IOException e) {
@@ -99,7 +95,7 @@ public class Sphero extends RemoteDevice {
 	
 	public void setRgbLedColor(byte r, byte g, byte b, boolean isPersistant) {
 		byte[] data = { r, g, b, (byte) (isPersistant ? 1 : 0) };
-		send(new SpheroCommandPacket(SpheroPacket.SOP.DEFAULT, SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
+		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.SOP.DEFAULT, SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
 	}
 	
 	public void setRgbLedColor(byte r, byte g, byte b) {
@@ -109,7 +105,7 @@ public class Sphero extends RemoteDevice {
 	public void setBackLedBrightness(int brightness) {
 		if (brightness >=0 && brightness <= 255) {
 			byte[] data = { (byte) brightness };
-			send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_BACK_LED, data, data.length));
+			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_BACK_LED, data, data.length));
 		} else {
 			System.err.println("Expected integer brightness in range [0,255].");
 		}
@@ -118,7 +114,7 @@ public class Sphero extends RemoteDevice {
 	public void setRelativeHeading(int heading) {
 		if (heading >=0 && heading <= 359) {
 			byte[] data = { (byte) (heading >> 8), (byte) heading };
-			send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_CAL, data, data.length));
+			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_CAL, data, data.length));
 		} else {
 			System.err.println("Expected integer heading in range [0,359].");
 		}
@@ -127,7 +123,7 @@ public class Sphero extends RemoteDevice {
 	public void enableDataStreaming(SpheroDataStreamingOptions options) {
 		if (options != null) {
 			byte[] data = options.toByteArray();
-			send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
+			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
 		} else {
 			System.err.println("Expected a valid set of options.");
 		}
@@ -138,28 +134,7 @@ public class Sphero extends RemoteDevice {
 		options.addOptions(SpheroDataStreamingOptions.MASK.DISABLE);
 		
 		byte[] data = options.toByteArray();
-		send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
-	}
-	
-	// Utility Functions
-	
-	private void send(SpheroCommandPacket packet) {
-		if(isConnected) {
-			try {
-				spheroCommandLine.write(packet.toByteArray());
-				if(!packet.isAsynchronous()) {
-					while(spheroResponseLine.available() > 0) {
-						byte[] responseBuffer = new byte[spheroResponseLine.available()];
-						spheroResponseLine.read(responseBuffer, 0, responseBuffer.length);
-						System.out.println(new SpheroResponsePacket(responseBuffer, responseBuffer.length));
-					}
-				}
-			} catch (IOException e) {
-				System.err.println("Unable to write command to Sphero (" + spheroFriendlyName + ").");
-			}
-		} else {
-			System.err.println("Sphero (" + spheroFriendlyName + ") is not connected.");
-		}
+		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
 	}
 	
 	

@@ -5,22 +5,21 @@ package com.jpdelacroix.sphero;
 
 import java.util.ArrayList;
 
+import com.jpdelacroix.sphero.util.RunnableLauncher;
+
 public class SpheroNexus {
-	
+		
 	public static void main(String[] args) throws InterruptedException {
 		
 //		SpheroDiscovery discoverer = new SpheroDiscovery();
 //		ArrayList<Sphero> nearbySpheros = discoverer.findNearbySpheros();
 		
 		Sphero s = new Sphero("00066644239C", "Sphero-OYW", Sphero.SPP_DEFAULT_CHANNEL);
-		
-		String[] colorSequence = { "00B7EB", "FF0090", "FFEF00", "000000" };
-		
+				
 		s.connect();
-		for(String color : colorSequence) {
-			s.setRgbLedColor(color, true);
-			Thread.sleep(200);
-		}
+		
+		(new RunnableLauncher()).launch(new SpheroApplication(s));
+		
 		s.disconnect();
 		
 		System.out.println("Done.");

@@ -113,7 +113,7 @@ public abstract class SpheroPacket {
 		for(int i=2; i<(length-1); i++) {	// + sum of all bytes starting after the
 			checksum += byteArray[i];		//   first two SOP bytes until the end
 		}									//   of the data payload.
-		return (byte) (checksum ^ 0xFF);	// + bit-wise inverse
+		return (byte) (checksum ^ (byte) 0xFF);	// + bit-wise inverse
 	}
 
 }
