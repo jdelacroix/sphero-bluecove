@@ -11,6 +11,7 @@ Supported functionality:
 + Enable/disable asynchronous data streaming.
 + Detect if Sphero has disconnected using a heartbeat.
 + Parse data in asynchronous packets given the options that were enabled for data streaming.
++ Enable/disable self-stabilization mode on Sphero.
 
 Unsupported functionality:
 

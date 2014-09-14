@@ -13,7 +13,7 @@ import com.jpdelacroix.sphero.packets.SpheroResponsePacket;
 public class SpheroApplication implements Runnable {
 
 	private Sphero roboticBall = null;
-	private SpheroDataStreamingOptions options = new SpheroDataStreamingOptions(200, 1, 4);
+	private SpheroDataStreamingOptions options = new SpheroDataStreamingOptions(200, 1, 0);
 	
 	public SpheroApplication(Sphero aSphero) {
 		this.roboticBall = aSphero;
@@ -35,6 +35,8 @@ public class SpheroApplication implements Runnable {
 				e.printStackTrace();
 			}
 		}
+		
+		roboticBall.setStabilizationMode(false);
 		
 //		ArrayList<SpheroResponsePacket> allResponses = roboticBall.getAllPackets();
 //		for (SpheroResponsePacket r : allResponses) {

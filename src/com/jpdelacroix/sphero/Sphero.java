@@ -172,6 +172,14 @@ public class Sphero extends RemoteDevice {
 		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
 	}
 	
+	public void setStabilizationMode(boolean isStabilizationOn) {
+		byte[] data = { 0x00 };
+		if (isStabilizationOn) {
+			data[0] = 0x01;
+		}
+		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_STABILIZATION, data, data.length));
+	}
+	
 	// Data Channel access
 	
 	public SpheroResponsePacket getNextPacket() {
