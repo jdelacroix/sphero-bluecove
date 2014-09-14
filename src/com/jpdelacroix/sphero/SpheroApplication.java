@@ -46,7 +46,7 @@ public class SpheroApplication implements Runnable {
 			if (packet.isAsynchronous()) {
 				System.out.println("");
 				System.out.println(packet);
-				HashMap<String, Integer> data = ((SpheroAsynchronousPacket) packet).parseDataWithOptions(options);
+				HashMap<String, Double> data = ((SpheroAsynchronousPacket) packet).parseDataWithOptions(options);
 				for (String name : data.keySet()) {
 					System.out.println(name + " : " + data.get(name));
 				}

@@ -12,8 +12,8 @@ public class SpheroAsynchronousPacket extends SpheroResponsePacket {
 		isAsynchronous = true;
 	}
 	
-	public HashMap<String, Integer> parseDataWithOptions(SpheroDataStreamingOptions options) {
-		HashMap<String, Integer> data = new HashMap<>();
+	public HashMap<String, Double> parseDataWithOptions(SpheroDataStreamingOptions options) {
+		HashMap<String, Double> data = new HashMap<>();
 		if (internalByteArray[2] == SpheroPacket.ID_CODE.SENSOR_DATA_STREAMING.getByteCode()) {
 			int length = (internalByteArray[3] << 8) | internalByteArray[4];
 			int index = 5;
@@ -24,7 +24,8 @@ public class SpheroAsynchronousPacket extends SpheroResponsePacket {
 					if (((value >> 15) & 1) == 1) {
 						value = -value;
 					}
-					data.put(option.name(), value);
+					double scaled_value = value*option.getScaleFactor();
+					data.put(option.name(), scaled_value);
 					index+= 2;
 				}
 			}
@@ -34,7 +35,8 @@ public class SpheroAsynchronousPacket extends SpheroResponsePacket {
 					if (((value >> 15) & 1) == 1) {
 						value = -value;
 					}
-					data.put(option.name(), (internalByteArray[index]<<8) | internalByteArray[index+1]);
+					double scaled_value = value*option.getScaleFactor();
+					data.put(option.name(), scaled_value);
 					index+= 2;
 				}
 			}

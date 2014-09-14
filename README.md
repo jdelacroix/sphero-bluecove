@@ -18,4 +18,4 @@ Unsupported functionality:
 
 Known issues:
 
-+ Data from asynchronous packets is not scaled according to the documentation.
++ Null pointer exception when calling Sphero functions after failed connect.
