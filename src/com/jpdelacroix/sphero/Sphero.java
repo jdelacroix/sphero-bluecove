@@ -83,6 +83,9 @@ public class Sphero extends RemoteDevice {
 	}
 	
 	public boolean isConnected() {
+		if (!isConnected) {
+			System.err.println("Sperho (" + spheroFriendlyName + ") is not connected!");
+		}
 		return isConnected;
 	}
 	
@@ -114,13 +117,15 @@ public class Sphero extends RemoteDevice {
 	// Sphero Command Set
 	
 	public void setRgbLedColor(String hexColor, boolean isPersistant) {
-		if(hexColor != null && hexColor.matches("[0-9A-Fa-f]{6}")) {
-			byte r = (byte) Integer.parseInt(hexColor.substring(0,2), 16);
-			byte g = (byte) Integer.parseInt(hexColor.substring(2,4), 16);
-			byte b = (byte) Integer.parseInt(hexColor.substring(4,6), 16);
-			setRgbLedColor(r, g, b, isPersistant);
-		} else {
-			System.out.println("Unable to parse hexidecimal color for RGB LED. Expected, for example, ff1493.");
+		if (isConnected()) {
+			if(hexColor != null && hexColor.matches("[0-9A-Fa-f]{6}")) {
+				byte r = (byte) Integer.parseInt(hexColor.substring(0,2), 16);
+				byte g = (byte) Integer.parseInt(hexColor.substring(2,4), 16);
+				byte b = (byte) Integer.parseInt(hexColor.substring(4,6), 16);
+				setRgbLedColor(r, g, b, isPersistant);
+			} else {
+				System.out.println("Unable to parse hexidecimal color for RGB LED. Expected, for example, ff1493.");
+			}
 		}
 	}
 	
@@ -129,8 +134,10 @@ public class Sphero extends RemoteDevice {
 	}
 	
 	public void setRgbLedColor(byte r, byte g, byte b, boolean isPersistant) {
-		byte[] data = { r, g, b, (byte) (isPersistant ? 1 : 0) };
-		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.SOP.DEFAULT, SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
+		if (isConnected()) {
+			byte[] data = { r, g, b, (byte) (isPersistant ? 1 : 0) };
+			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.SOP.DEFAULT, SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_RGB_LED, data, data.length));
+		}
 	}
 	
 	public void setRgbLedColor(byte r, byte g, byte b) {
@@ -138,46 +145,56 @@ public class Sphero extends RemoteDevice {
 	}
 	
 	public void setBackLedBrightness(int brightness) {
-		if (brightness >=0 && brightness <= 255) {
-			byte[] data = { (byte) brightness };
-			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_BACK_LED, data, data.length));
-		} else {
-			System.err.println("Expected integer brightness in range [0,255].");
+		if (isConnected()) {
+			if (brightness >=0 && brightness <= 255) {
+				byte[] data = { (byte) brightness };
+				spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_BACK_LED, data, data.length));
+			} else {
+				System.err.println("Expected integer brightness in range [0,255].");
+			}
 		}
 	}
 	
 	public void setRelativeHeading(int heading) {
-		if (heading >=0 && heading <= 359) {
-			byte[] data = { (byte) (heading >> 8), (byte) heading };
-			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_CAL, data, data.length));
-		} else {
-			System.err.println("Expected integer heading in range [0,359].");
+		if (isConnected()) {
+			if (heading >=0 && heading <= 359) {
+				byte[] data = { (byte) (heading >> 8), (byte) heading };
+				spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_CAL, data, data.length));
+			} else {
+				System.err.println("Expected integer heading in range [0,359].");
+			}
 		}
 	}
 	
 	public void enableDataStreaming(SpheroDataStreamingOptions options) {
-		if (options != null) {
-			byte[] data = options.toByteArray();
-			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
-		} else {
-			System.err.println("Expected a valid set of options.");
+		if (isConnected()) {
+			if (options != null) {
+				byte[] data = options.toByteArray();
+				spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
+			} else {
+				System.err.println("Expected a valid set of options.");
+			}
 		}
 	}
 	
 	public void disableDataStreaming() {
-		SpheroDataStreamingOptions options = new SpheroDataStreamingOptions();
-		options.addOptions(SpheroDataStreamingOptions.MASK.DISABLE);
-		
-		byte[] data = options.toByteArray();
-		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
+		if (isConnected()) {
+			SpheroDataStreamingOptions options = new SpheroDataStreamingOptions();
+			options.addOptions(SpheroDataStreamingOptions.MASK.DISABLE);
+			
+			byte[] data = options.toByteArray();
+			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_DATA_STREAMING, data, data.length));
+		}
 	}
 	
 	public void setStabilizationMode(boolean isStabilizationOn) {
-		byte[] data = { 0x00 };
-		if (isStabilizationOn) {
-			data[0] = 0x01;
+		if (isConnected()) {
+			byte[] data = { 0x00 };
+			if (isStabilizationOn) {
+				data[0] = 0x01;
+			}
+			spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_STABILIZATION, data, data.length));
 		}
-		spheroDataChannel.send(new SpheroCommandPacket(SpheroPacket.DID.SPHERO, SpheroPacket.CID.SET_STABILIZATION, data, data.length));
 	}
 	
 	// Data Channel access

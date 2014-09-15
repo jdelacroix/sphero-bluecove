@@ -19,4 +19,4 @@ Unsupported functionality:
 
 Known issues:
 
-+ Null pointer exception when calling Sphero functions after failed connect.
++ None at this time.
