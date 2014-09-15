@@ -15,7 +15,7 @@ public class RunnableLauncher {
 		runnableService.submit(aRunnable);
 		runnableService.shutdown();
 		try {
-			while(!runnableService.awaitTermination(1, TimeUnit.SECONDS));
+			while(!runnableService.awaitTermination(60, TimeUnit.SECONDS));
 		} catch (InterruptedException e) {
 			System.err.println("Interrupted while waiting for Runnable to finish.");
 		}

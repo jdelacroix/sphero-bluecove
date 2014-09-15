@@ -24,12 +24,13 @@ public class SpheroApplication implements Runnable {
 	
 	@Override
 	public void run() {
-		String[] colorSequence = { "00B7EB", "FF0090", "FFEF00", "000000" };
+		//String[] colorSequence = { "00B7EB", "FF0090", "FFEF00", "000000" };		// CMYK
+		String[] colorSequence = { "FF5800", "FEDF00", "FFFFFF" };					// OYW
 		
 		for(String color : colorSequence) {
 			roboticBall.setRgbLedColor(color, true);
 			try {
-				Thread.sleep(200);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -46,7 +47,7 @@ public class SpheroApplication implements Runnable {
 		while (roboticBall.isConnected()) {
 			SpheroResponsePacket packet = roboticBall.waitForNextPacket();
 			if (packet.isAsynchronous()) {
-				System.out.println("");
+				System.out.println("***");
 				System.out.println(packet);
 				HashMap<String, Double> data = ((SpheroAsynchronousPacket) packet).parseDataWithOptions(options);
 				for (String name : data.keySet()) {
